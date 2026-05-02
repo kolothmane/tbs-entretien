@@ -256,10 +256,7 @@ export default function ReaderApp() {
   return (
     <div className="w-full max-w-xl">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold">Lecteur de texte</h1>
-        <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          Mode téléprompteur avec une vitesse mémorisée sur cet appareil.
-        </p>
+        <h1 className="text-2xl font-semibold">kdo ahssan salma</h1>
       </header>
 
       {mode === "config" && (

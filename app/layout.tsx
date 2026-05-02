@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lecteur de texte",
+  title: "kdo ahssan salma",
   description:
     "Une plateforme mobile-friendly pour lire du texte à une vitesse personnalisée.",
 };
