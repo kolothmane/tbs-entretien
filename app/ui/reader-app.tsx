@@ -77,19 +77,23 @@ That experience also reminded me of why I want to work in finance, not just for 
   },
 ] as const;
 
-type Mode = "config" | "reading" | "done";
+type Mode = "config" | "reading";
 type QuestionId = (typeof QUESTIONS)[number]["id"];
 
 function clampInt(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, Math.trunc(value)));
 }
 
+function normalizeText(text: string) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
 function countWords(text: string) {
-  return text.trim().split(/\s+/g).filter(Boolean).length;
+  return normalizeText(text).split(/\s+/g).filter(Boolean).length;
 }
 
 function speedToPixelsPerSecond(speed: number) {
-  return 8 + speed * 1.35;
+  return 18 + speed * 2.4;
 }
 
 function isQuestionId(value: string): value is QuestionId {
@@ -117,9 +121,6 @@ export default function ReaderApp() {
     getInitialQuestionId(),
   );
   const [mode, setMode] = useState<Mode>("config");
-  const [text, setText] = useState<string>(() =>
-    findQuestion(getInitialQuestionId()).answer,
-  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
 
@@ -143,8 +144,8 @@ export default function ReaderApp() {
     return DEFAULT_SPEED;
   });
 
-  const wordCount = useMemo(() => countWords(text), [text]);
   const question = useMemo(() => findQuestion(questionId), [questionId]);
+  const answerText = useMemo(() => normalizeText(question.answer), [question]);
 
   useEffect(() => {
     try {
@@ -164,7 +165,7 @@ export default function ReaderApp() {
 
   useEffect(() => {
     if (mode === "reading") {
-      prompterRef.current?.scrollTo({ top: 0 });
+      prompterRef.current?.scrollTo({ left: 0 });
     }
   }, [mode]);
 
@@ -179,7 +180,7 @@ export default function ReaderApp() {
 
       const lastFrame = lastFrameRef.current ?? timestamp;
       const elapsedSeconds = (timestamp - lastFrame) / 1000;
-      const maxScroll = Math.max(0, prompter.scrollHeight - prompter.clientHeight);
+      const maxScroll = Math.max(0, prompter.scrollWidth - prompter.clientWidth);
 
       lastFrameRef.current = timestamp;
 
@@ -187,24 +188,24 @@ export default function ReaderApp() {
         progressRef.current = 100;
         setProgressPercent(100);
         setIsPlaying(false);
-        setMode("done");
+        setMode("config");
         return;
       }
 
-      prompter.scrollTop = Math.min(
+      prompter.scrollLeft = Math.min(
         maxScroll,
-        prompter.scrollTop + pixelsPerSecond * elapsedSeconds,
+        prompter.scrollLeft + pixelsPerSecond * elapsedSeconds,
       );
 
-      const nextProgress = Math.round((prompter.scrollTop / maxScroll) * 100);
+      const nextProgress = Math.round((prompter.scrollLeft / maxScroll) * 100);
       if (nextProgress !== progressRef.current) {
         progressRef.current = nextProgress;
         setProgressPercent(nextProgress);
       }
 
-      if (prompter.scrollTop >= maxScroll) {
+      if (prompter.scrollLeft >= maxScroll) {
         setIsPlaying(false);
-        setMode("done");
+        setMode("config");
         return;
       }
 
@@ -227,8 +228,10 @@ export default function ReaderApp() {
     setSpeed(clampInt(next, MIN_SPEED, MAX_SPEED));
   }
 
-  function startReading() {
-    if (wordCount === 0) return;
+  function startReading(nextQuestionId: QuestionId) {
+    const nextQuestion = findQuestion(nextQuestionId);
+    if (countWords(nextQuestion.answer) === 0) return;
+    setQuestionId(nextQuestionId);
     progressRef.current = 0;
     setProgressPercent(0);
     setMode("reading");
@@ -245,7 +248,7 @@ export default function ReaderApp() {
   function restartReading() {
     progressRef.current = 0;
     setProgressPercent(0);
-    prompterRef.current?.scrollTo({ top: 0 });
+    prompterRef.current?.scrollTo({ left: 0 });
     setMode("reading");
     setIsPlaying(true);
   }
@@ -302,61 +305,42 @@ export default function ReaderApp() {
             />
           </section>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-            <label
-              htmlFor="question"
-              className="block text-sm font-medium text-zinc-900 dark:text-zinc-50"
-            >
-              Question d&apos;entretien
-            </label>
-            <select
-              id="question"
-              className="mt-3 h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-base text-zinc-900 shadow-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
-              value={questionId}
-              onChange={(e) => {
-                const nextQuestionId = e.target.value as QuestionId;
-                setQuestionId(nextQuestionId);
-                setText(findQuestion(nextQuestionId).answer);
-              }}
-            >
-              {QUESTIONS.map((q) => (
-                <option key={q.id} value={q.id}>
-                  {q.label}
-                </option>
-              ))}
-            </select>
-          </section>
+          <section>
+            <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              Questions
+            </h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {QUESTIONS.map((q) => {
+                const isSelected = q.id === questionId;
+                const words = countWords(q.answer);
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <label
-                  htmlFor="text"
-                  className="block text-sm font-medium text-zinc-900 dark:text-zinc-50"
-                >
-                  Réponse
-                </label>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  {wordCount} mot{wordCount > 1 ? "s" : ""}.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="inline-flex h-11 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
-                disabled={wordCount === 0}
-                onClick={startReading}
-              >
-                Démarrer
-              </button>
+                return (
+                  <button
+                    key={q.id}
+                    type="button"
+                    className={`min-h-28 rounded-lg border p-4 text-left shadow-sm transition-colors ${
+                      isSelected
+                        ? "border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-950"
+                        : "border-zinc-200 bg-white text-zinc-950 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
+                    }`}
+                    onClick={() => startReading(q.id)}
+                  >
+                    <span className="block text-base font-semibold leading-5">
+                      {q.label}
+                    </span>
+                    <span
+                      className={`mt-3 block text-xs ${
+                        isSelected
+                          ? "text-zinc-200 dark:text-zinc-700"
+                          : "text-zinc-500 dark:text-zinc-400"
+                      }`}
+                    >
+                      {words} mot{words > 1 ? "s" : ""} · Démarrer
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-
-            <textarea
-              id="text"
-              className="mt-3 min-h-44 w-full resize-y rounded-lg border border-zinc-200 bg-white p-3 text-base leading-6 text-zinc-900 shadow-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
-              placeholder="Sélectionne une question ou colle ta réponse ici..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
           </section>
         </div>
       )}
@@ -409,17 +393,17 @@ export default function ReaderApp() {
             </span>
           </div>
 
-          <div className="relative mt-4 h-[62vh] min-h-96 overflow-hidden rounded-lg bg-zinc-950 text-zinc-50 shadow-inner">
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-zinc-950 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-zinc-950 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-4 top-1/2 z-10 h-px bg-emerald-300/70" />
+          <div className="relative mt-4 h-40 overflow-hidden rounded-lg bg-zinc-950 text-zinc-50 shadow-inner sm:h-48">
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-zinc-950 to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-zinc-950 to-transparent" />
+            <div className="pointer-events-none absolute inset-y-5 left-1/2 z-10 w-px bg-emerald-300/70" />
             <div
               ref={prompterRef}
-              className="h-full overflow-hidden"
+              className="flex h-full items-center overflow-hidden"
               aria-label="Téléprompteur"
             >
-              <article className="px-5 py-[44vh] text-2xl font-medium leading-relaxed sm:px-8 sm:text-3xl">
-                {text}
+              <article className="inline-block whitespace-nowrap px-[50%] text-3xl font-semibold leading-none sm:text-5xl">
+                {answerText}
               </article>
             </div>
           </div>
@@ -439,32 +423,6 @@ export default function ReaderApp() {
               onClick={restartReading}
             >
               Recommencer
-            </button>
-          </div>
-        </div>
-      )}
-
-      {mode === "done" && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="text-lg font-semibold">Lecture terminée</h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-            Question : <span className="font-medium">{question.label}</span>
-          </p>
-
-          <div className="mt-4 grid gap-3">
-            <button
-              type="button"
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
-              onClick={restartReading}
-            >
-              Relire
-            </button>
-            <button
-              type="button"
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
-              onClick={stopReading}
-            >
-              Modifier le texte
             </button>
           </div>
         </div>

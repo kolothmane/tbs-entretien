@@ -5,8 +5,8 @@ Petite plateforme web pour lire du texte avec un mode téléprompteur.
 ### Fonctionnalités
 
 - Réglage de la vitesse entre 1 et 100
-- Choix d’une question d’entretien avec réponse préremplie
-- Mode lecture avec défilement continu façon téléprompteur
+- Choix d’une question d’entretien via des cartes
+- Mode lecture avec défilement horizontal sur une seule ligne
 - La vitesse est mémorisée sur l’appareil (localStorage)
 
 ## Getting Started
