@@ -1,12 +1,12 @@
-## Lecteur de texte (mobile-friendly)
+## Lecteur de texte mobile-friendly
 
-Petite plateforme web pour lire du texte à une vitesse personnalisée.
+Petite plateforme web pour lire du texte avec un mode téléprompteur.
 
 ### Fonctionnalités
 
-- Réglage de la vitesse (mots/min) + slider
-- Choix d’une question de compréhension
-- Mode lecture (un mot à la fois) avec pause / navigation
+- Réglage de la vitesse entre 1 et 100
+- Choix d’une question d’entretien avec réponse préremplie
+- Mode lecture avec défilement continu façon téléprompteur
 - La vitesse est mémorisée sur l’appareil (localStorage)
 
 ## Getting Started
