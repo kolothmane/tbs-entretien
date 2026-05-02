@@ -425,9 +425,6 @@ export default function ReaderApp() {
         </div>
       )}
 
-      <footer className="mt-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
-        La vitesse est mémorisée sur cet appareil.
-      </footer>
     </div>
   );
 }
