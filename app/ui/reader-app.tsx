@@ -309,7 +309,6 @@ export default function ReaderApp() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {QUESTIONS.map((q) => {
                 const isSelected = q.id === questionId;
-                const words = countWords(q.answer);
 
                 return (
                   <button
@@ -324,15 +323,6 @@ export default function ReaderApp() {
                   >
                     <span className="block text-base font-semibold leading-5">
                       {q.label}
-                    </span>
-                    <span
-                      className={`mt-3 block text-xs ${
-                        isSelected
-                          ? "text-zinc-200 dark:text-zinc-700"
-                          : "text-zinc-500 dark:text-zinc-400"
-                      }`}
-                    >
-                      {words} mot{words > 1 ? "s" : ""} · Démarrer
                     </span>
                   </button>
                 );
